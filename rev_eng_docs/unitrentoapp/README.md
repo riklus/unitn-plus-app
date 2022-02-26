@@ -1,5 +1,8 @@
-# Reverse Engineering di UniTrentoApp
-## Procedura di login via Shibboleth
+# Reverse Engineering di UniTrentoApp
+
+## Procedura di login via Shibboleth
+
+
 1. L'app apre `GET https://idsrv.unitn.it/sts/identity/connect/authorize?redirect_uri=unitrentoapp%3A%2F%2Fcallback&client_id=it.unitn.icts.unitrentoapp&response_type=code&state=VxdUPcTXcR&scope=openid%20profile%20account%20email%20offline_access%20icts%3A%2F%2Funitrentoapp%2Fpreferences%20icts%3A%2F%2Fservicedesk%2Fsupport%20icts%3A%2F%2Fstudente%2Fcarriera%20icts%3A%2F%2Fopera%2Fmensa&access_type=offline&client_secret=[ VEDI client.secret.js ]&code_challenge=mlG_WUrkSDYbJYh3jkg-TH5KDL-Eb3fFTjDBmhuhPpI&code_challenge_method=S256`
   a. `code_challenge` è una stringa casuale da 43 a 128 caratteri, della quale viene calcolato il digest SHA256 (`code_challenge_method=S256`) e poi viene fatto un base64-url-encode
   b. `code_challenge_method` è `S256` oppure `plain`. UniTrentoApp usa `S256`. `plain` non testato
