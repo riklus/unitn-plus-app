@@ -1,2 +1,5 @@
 # Internal Testing and Docs
 internal/
+
+# Secret
+rev_eng_docs/unitrentoapp/login_script/client_secret.js
