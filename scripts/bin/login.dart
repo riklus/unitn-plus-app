@@ -72,15 +72,15 @@ String extractRelayState(String body) {
 
 /// Retrives authZcode from server by using SAMLResponse.
 Future<String> getAuthorizationCode(
-    Requests s, String SamlResponse, String RelayState) async {
+    Requests s, String samlResponse, String relayState) async {
   var r = await s.post('https://idsrv.unitn.it/sts/identity/saml2service/Acs',
       headers: {
         ...iphoneHeaders,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: Uri(queryParameters: {
-        'RelayState': RelayState,
-        'SAMLResponse': SamlResponse
+        'RelayState': relayState,
+        'SAMLResponse': samlResponse
       }).query);
 
   print(await r.stream.bytesToString());
