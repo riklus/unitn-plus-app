@@ -80,7 +80,7 @@ Future<String> getAuthorizationCode(
       },
       body: Uri(queryParameters: {
         'RelayState': RelayState,
-        'SamlResponse': SamlResponse
+        'SAMLResponse': SamlResponse
       }).query);
 
   print('AA');
