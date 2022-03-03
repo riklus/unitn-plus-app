@@ -6,7 +6,7 @@ import readline from 'readline';
 
 let cookieJar = new fetchCookie.toughCookie.CookieJar();
 const fetch = fetchCookie(nodeFetch, cookieJar)
-import CLIENT_SECRET from './client_secret.js';
+const CLIENT_SECRET = 'FplHsHYTvmMN7hvogSzf';
 const CLIENT_ID = "it.unitn.icts.unitrentoapp";
 
 const ENTRYPOINT_URL = `https://idsrv.unitn.it/sts/identity/connect/authorize?redirect_uri=unitrentoapp%3A%2F%2Fcallback&client_id=${CLIENT_ID}&response_type=code&scope=openid%20profile%20account%20email%20offline_access%20icts%3A%2F%2Funitrentoapp%2Fpreferences%20icts%3A%2F%2Fservicedesk%2Fsupport%20icts%3A%2F%2Fstudente%2Fcarriera%20icts%3A%2F%2Fopera%2Fmensa&access_type=offline&client_secret=${CLIENT_SECRET}`;
@@ -122,6 +122,7 @@ rl.question("Username: ", async (username) => {
       // Questa call fallirà inevitabilmente
       // Nessun altro redirect_uri oltre a unitrentoapp://callback viene accettato
       // Quindi quando verremo reindirizzati a unitrentoapp://callback scatterà un'eccezione
+      console.log(signInCookies)
       await fetch(nextStop, {
         method: "POST",
         redirect: "follow",
