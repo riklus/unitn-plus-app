@@ -83,8 +83,7 @@ Future<String> getAuthorizationCode(
         'SAMLResponse': SamlResponse
       }).query);
 
-  print('AA');
-  print(r.headers);
+  print(await r.stream.bytesToString());
 
   return '';
 }

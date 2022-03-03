@@ -28,7 +28,6 @@ class Requests {
       _pushCookie(r.headers, uri.host);
 
       uri = uri.resolve(r.headers['location'] ?? '');
-      headers = {};
     } while (r.isRedirect);
 
     return r;
@@ -38,6 +37,7 @@ class Requests {
       {Map<String, String>? headers,
       Map<String, dynamic>? queryParameters,
       String? body}) async {
+    var method = 'Post';
     var baseClient = http.Client();
 
     Uri uri = Uri.parse(url);
@@ -51,7 +51,7 @@ class Requests {
       print("URI:" + uri.toString());
       print("Cookie: " + _getCookies(uri.host));
       print(body ?? '');
-      var req = http.Request('Post', uri)
+      var req = http.Request(method, uri)
         ..followRedirects = false
         ..headers.addAll({'Cookie': _getCookies(uri.host)})
         ..headers.addAll(headers ?? {})
@@ -60,7 +60,7 @@ class Requests {
       _pushCookie(r.headers, uri.host);
 
       uri = uri.resolve(r.headers['location'] ?? '');
-      headers = {};
+      method = 'Get';
     } while (r.isRedirect);
 
     return r;
