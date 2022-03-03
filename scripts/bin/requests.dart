@@ -47,10 +47,10 @@ class Requests {
 
     http.StreamedResponse r;
     do {
-      print('POST:');
+      print(method.toUpperCase() + ':');
       print("URI:" + uri.toString());
       print("Cookie: " + _getCookies(uri.host));
-      print(body ?? '');
+      //print(body ?? '');
       var req = http.Request(method, uri)
         ..followRedirects = false
         ..headers.addAll({'Cookie': _getCookies(uri.host)})
@@ -111,10 +111,15 @@ class Requests {
   /// Get all the cookies as a single String from the cookieJar.
   String _getCookies(String host) {
     String retval = "";
+
     cookieJar[host]?.forEach((c) {
-      retval += c.name + '=' + c.value + '; ';
+      if (c.value != '') retval += c.name + '=' + c.value + '; ';
     });
 
-    return retval;
+    if (retval.length >= 2) {
+      return retval.substring(0, retval.length - 2);
+    } else {
+      return retval;
+    }
   }
 }
