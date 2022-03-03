@@ -1,0 +1,1 @@
+Script e test applicazione
