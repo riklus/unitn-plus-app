@@ -11,8 +11,6 @@ class Requests {
   Future<http.StreamedResponse> get(String url,
       {Map<String, String>? headers,
       Map<String, dynamic>? queryParameters}) async {
-    var baseClient = http.Client();
-
     Uri uri = Uri.parse(url);
     if (queryParameters != null) {
       uri = uri.replace(queryParameters: queryParameters);
@@ -24,7 +22,7 @@ class Requests {
         ..followRedirects = false
         ..headers.addAll({'Cookie': _getCookies(uri.host)})
         ..headers.addAll(headers ?? {});
-      r = await baseClient.send(req);
+      r = await req.send();
       _pushCookie(r.headers, uri.host);
 
       uri = uri.resolve(r.headers['location'] ?? '');
@@ -38,7 +36,6 @@ class Requests {
       Map<String, dynamic>? queryParameters,
       String? body}) async {
     var method = 'Post';
-    var baseClient = http.Client();
 
     Uri uri = Uri.parse(url);
     if (queryParameters != null) {
@@ -56,7 +53,7 @@ class Requests {
         ..headers.addAll({'Cookie': _getCookies(uri.host)})
         ..headers.addAll(headers ?? {})
         ..body = body ?? '';
-      r = await baseClient.send(req);
+      r = await req.send();
       _pushCookie(r.headers, uri.host);
 
       print(r.headers['location'] ?? '');
