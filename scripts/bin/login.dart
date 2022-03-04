@@ -1,4 +1,3 @@
-import 'package:http/http.dart';
 import 'requests.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
@@ -16,7 +15,7 @@ const clientId = 'it.unitn.icts.unitrentoapp';
 const clientSecret = 'FplHsHYTvmMN7hvogSzf';
 
 /// Initiate Authorization of a Session.
-Future<StreamedResponse> initAuthorize(Requests s) async {
+Future<ApiResponse> initAuthorize(Requests s) async {
   final state =
       base64UrlEncode(await SecretKeyData.random(length: 7).extractBytes());
   final verifier =
@@ -41,7 +40,7 @@ Future<StreamedResponse> initAuthorize(Requests s) async {
 }
 
 /// Authenticates a Session (login).
-Future<StreamedResponse> authenticate(
+Future<ApiResponse> authenticate(
     Requests s, String username, String password) async {
   return s.post(
       'https://idp.unitn.it/idp/profile/SAML2/Redirect/SSO?execution=e1s1',
@@ -74,18 +73,19 @@ String extractRelayState(String body) {
 /// Retrives authZcode from server by using SAMLResponse.
 Future<String> getAuthorizationCode(
     Requests s, String samlResponse, String relayState) async {
-  var r = await s.post('https://idsrv.unitn.it/sts/identity/saml2service/Acs',
-      headers: {
-        ...iphoneHeaders,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: Uri(queryParameters: {
-        'RelayState': relayState,
-        'SAMLResponse': samlResponse
-      }).query);
-
-  print("RESPONSE: " + r.headers.toString());
-  print(await r.stream.bytesToString());
+  try {
+    var r = await s.post('https://idsrv.unitn.it/sts/identity/saml2service/Acs',
+        headers: {
+          ...iphoneHeaders,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: Uri(queryParameters: {
+          'RelayState': relayState,
+          'SAMLResponse': samlResponse
+        }).query);
+  } catch (e) {
+    print(e);
+  }
 
   return '';
 }
@@ -97,7 +97,7 @@ main() async {
 
   // Authentication will return SAML form.
   var r = await authenticate(s, credentials.user, credentials.pass);
-  var authNresBody = await r.stream.bytesToString();
+  var authNresBody = await r.text();
   var samlResponse = extractSamlResponse(authNresBody);
   var relayState = extractRelayState(authNresBody);
 

@@ -1,5 +1,28 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'dart:async';
+
+class ApiResponse {
+  HttpClientResponse response;
+  HttpClient client;
+
+  ApiResponse(this.response, this.client);
+
+  Future<String> text() async {
+    final completer = Completer<String>();
+    final contents = StringBuffer();
+    response.transform(utf8.decoder).listen((data) {
+      contents.write(data);
+    }, onDone: () => completer.complete(contents.toString()));
+    var c = await completer.future;
+    close();
+    return c;
+  }
+
+  close() {
+    client.close(force: true);
+  }
+}
 
 /// Simple Requests class to make cookie persistant requests.
 /// Requests doesn't check the date of the cookie and cookies are matched by
@@ -8,102 +31,104 @@ class Requests {
   Map<String, List<Cookie>> cookieJar = {};
 
   /// Get request with optional queryParameters.
-  Future<http.StreamedResponse> get(String url,
+  Future<ApiResponse> get(String url,
       {Map<String, String>? headers,
       Map<String, dynamic>? queryParameters}) async {
-    Uri uri = Uri.parse(url);
-    if (queryParameters != null) {
-      uri = uri.replace(queryParameters: queryParameters);
+    var client = HttpClient();
+    client.userAgent = null;
+    HttpClientResponse r;
+    try {
+      Uri uri = Uri.parse(url);
+      if (queryParameters != null) {
+        uri = uri.replace(queryParameters: queryParameters);
+      }
+
+      do {
+        var req = await client.getUrl(uri)
+          ..followRedirects = false
+          ..headers.add('Cookie', _getCookies(uri.host));
+
+        headers?.forEach((key, value) {
+          req.headers.add(key, value);
+        });
+
+        r = await req.close();
+        _pushCookie(r.headers, uri.host);
+
+        uri = uri.resolve(r.headers.value('location') ?? '');
+      } while (r.isRedirect);
+    } catch (e) {
+      rethrow;
+    } finally {
+      client.close(force: true);
     }
-
-    http.StreamedResponse r;
-    do {
-      var req = http.Request('Get', uri)
-        ..followRedirects = false
-        ..headers.addAll({'Cookie': _getCookies(uri.host)})
-        ..headers.addAll(headers ?? {});
-      r = await req.send();
-      _pushCookie(r.headers, uri.host);
-
-      uri = uri.resolve(r.headers['location'] ?? '');
-    } while (r.isRedirect);
-
-    return r;
+    return ApiResponse(r, client);
   }
 
-  Future<http.StreamedResponse> post(String url,
+  Future<ApiResponse> post(String url,
       {Map<String, String>? headers,
       Map<String, dynamic>? queryParameters,
       String? body}) async {
+    var client = HttpClient();
+    client.userAgent = null;
     var method = 'Post';
 
-    Uri uri = Uri.parse(url);
-    if (queryParameters != null) {
-      uri = uri.replace(queryParameters: queryParameters);
+    HttpClientResponse r;
+
+    try {
+      Uri uri = Uri.parse(url);
+      if (queryParameters != null) {
+        uri = uri.replace(queryParameters: queryParameters);
+      }
+
+      do {
+        var req = await client.openUrl(method, uri)
+          ..followRedirects = false
+          ..headers.add('Cookie', _getCookies(uri.host));
+
+        headers?.forEach((key, value) {
+          req.headers.add(key, value);
+        });
+        if (body != null) req.write(body);
+
+        r = await req.close();
+        _pushCookie(r.headers, uri.host);
+
+        uri = uri.resolve(r.headers.value('location') ?? '');
+        method = 'Get';
+        body = null;
+      } while (r.isRedirect);
+    } catch (e) {
+      rethrow;
+    } finally {
+      client.close(force: true);
     }
-
-    http.StreamedResponse r;
-    do {
-      print(method.toUpperCase() + ':');
-      print("URI:" + uri.toString());
-      print("Cookie: " + _getCookies(uri.host));
-      print(body ?? '');
-      var req = http.Request(method, uri)
-        ..followRedirects = false
-        ..headers.addAll({'Cookie': _getCookies(uri.host)})
-        ..headers.addAll(headers ?? {})
-        ..body = body ?? '';
-      r = await req.send();
-      _pushCookie(r.headers, uri.host);
-
-      print(r.headers['location'] ?? '');
-      uri = uri.resolve(r.headers['location'] ?? '');
-      method = 'Get';
-      body = null;
-    } while (r.isRedirect);
-
-    return r;
+    return ApiResponse(r, client);
   }
 
   /// Pushes cookie in the cookieJar if set-cookie is present in the headers.
-  _pushCookie(Map<String, String> headers, String host) {
-    if (headers.containsKey('set-cookie')) {
-      var setCookie = headers['set-cookie'] ?? '';
+  _pushCookie(HttpHeaders headers, String host) {
+    var cookies = headers['set-cookie'] ?? [];
 
-      // Parsing multiple cookies.
-      // var cookies = setCookie.split(RegExp(r","));
+    for (String c in cookies) {
+      var cookie = Cookie.fromSetCookieValue(c);
 
-      // for (var i = 0; i < cookies.length; i++) {
-      //   if (cookies[i].contains(RegExp(r"expires=[^=]{3}$"))) {
-      //     // Merge cookie splits if it's an expires value that has a comma.
-      //     if (i + 1 < cookies.length) cookies[i] += cookies[i + 1];
-      //     cookies.removeAt(i + 1);
-      //     i++;
-      //   }
-      // }
-      // Used by http dart to differentiate cookies
-      var cookies = setCookie.split('|');
+      if (cookieJar[host] == null) cookieJar[host] = [];
 
-      for (String c in cookies) {
-        var cookie = Cookie.fromSetCookieValue(c);
-
-        if (cookieJar[host] == null) cookieJar[host] = [];
-
-        // Update the cookie if present.
-        var cookiePresent = false;
-        for (var i = 0; i < cookieJar[host]!.length; i++) {
-          if (cookieJar[host]![i].name == cookie.name &&
-              cookieJar[host]![i].domain == cookie.domain &&
-              cookieJar[host]![i].path == cookie.path) {
-            cookieJar[host]![i] = cookie;
-            cookiePresent = true;
-            break;
-          }
+      // Update the cookie if present.
+      var cookiePresent = false;
+      for (var i = 0; i < cookieJar[host]!.length; i++) {
+        if (cookieJar[host]![i].name == cookie.name &&
+            cookieJar[host]![i].domain == cookie.domain &&
+            cookieJar[host]![i].path == cookie.path) {
+          cookieJar[host]![i] = cookie;
+          cookiePresent = true;
+          break;
         }
-
-        // Add cookie if not present.
-        if (!cookiePresent) cookieJar[host]!.add(cookie); // Bad implementation
       }
+
+      // Add cookie if not present.
+      if (!cookiePresent) cookieJar[host]!.add(cookie); // Bad implementation
     }
   }
 
