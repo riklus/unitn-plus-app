@@ -58,9 +58,10 @@ class Requests {
         uri = uri.resolve(r.headers.value('location') ?? '');
       } while (r.isRedirect);
     } catch (e) {
+      client.close(force: true);
       rethrow;
     } finally {
-      client.close(force: true);
+      client.close();
     }
     return ApiResponse(r, client);
   }
@@ -99,9 +100,10 @@ class Requests {
         body = null;
       } while (r.isRedirect);
     } catch (e) {
+      client.close(force: true);
       rethrow;
     } finally {
-      client.close(force: true);
+      client.close();
     }
     return ApiResponse(r, client);
   }
