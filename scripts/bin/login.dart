@@ -2,6 +2,7 @@ import 'package:http/http.dart';
 import 'requests.dart';
 import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
+import 'credentials.dart' as credentials;
 
 const iphoneHeaders = {
   'User-Agent':
@@ -95,8 +96,7 @@ main() async {
   await initAuthorize(s);
 
   // Authentication will return SAML form.
-  var r = await authenticate(
-      s, 'user', 'pass');
+  var r = await authenticate(s, credentials.user, credentials.pass);
   var authNresBody = await r.stream.bytesToString();
   var samlResponse = extractSamlResponse(authNresBody);
   var relayState = extractRelayState(authNresBody);
