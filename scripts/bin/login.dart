@@ -93,7 +93,7 @@ Future<String> getAuthorizationCode(
 main() async {
   var s = Requests();
   // initAuthorization will redirect and ask for Authentication.
-  await initAuthorize(s);
+  (await initAuthorize(s)).close();
 
   // Authentication will return SAML form.
   var r = await authenticate(s, credentials.user, credentials.pass);
