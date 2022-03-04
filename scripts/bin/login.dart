@@ -60,13 +60,13 @@ Future<StreamedResponse> authenticate(
 
 /// Extracts the SAML Response from the SAMLform.
 String extractSamlResponse(String body) {
-  var regex = RegExp(r'name="(SAMLResponse)" value="(.*?)"');
+  var regex = RegExp(r'name="(SAMLResponse)" value="(.*?)"', multiLine: true);
   return regex.firstMatch(body)!.group(2)!;
 }
 
 /// Extracts the RelayState (callback://unitrentoapp) from the SAMLform.
 String extractRelayState(String body) {
-  var regex = RegExp(r'name="(RelayState)" value="(.*?)"');
+  var regex = RegExp(r'name="(RelayState)" value="(.*?)"', multiLine: true);
   return regex.firstMatch(body)!.group(2)!;
 }
 
@@ -83,6 +83,7 @@ Future<String> getAuthorizationCode(
         'SAMLResponse': samlResponse
       }).query);
 
+  print("RESPONSE: " + r.headers.toString());
   print(await r.stream.bytesToString());
 
   return '';
@@ -94,7 +95,8 @@ main() async {
   await initAuthorize(s);
 
   // Authentication will return SAML form.
-  var r = await authenticate(s, 'user', 'pass');
+  var r = await authenticate(
+      s, 'user', 'pass');
   var authNresBody = await r.stream.bytesToString();
   var samlResponse = extractSamlResponse(authNresBody);
   var relayState = extractRelayState(authNresBody);
