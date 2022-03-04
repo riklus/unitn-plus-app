@@ -50,7 +50,7 @@ class Requests {
       print(method.toUpperCase() + ':');
       print("URI:" + uri.toString());
       print("Cookie: " + _getCookies(uri.host));
-      //print(body ?? '');
+      print(body ?? '');
       var req = http.Request(method, uri)
         ..followRedirects = false
         ..headers.addAll({'Cookie': _getCookies(uri.host)})
@@ -59,8 +59,10 @@ class Requests {
       r = await baseClient.send(req);
       _pushCookie(r.headers, uri.host);
 
+      print(r.headers['location'] ?? '');
       uri = uri.resolve(r.headers['location'] ?? '');
       method = 'Get';
+      body = null;
     } while (r.isRedirect);
 
     return r;
