@@ -17,11 +17,11 @@ String state = '', verifier = '', challenge = '';
 
 /// Initiate Authorization of a Session.
 Future<ApiResponse> initAuthorize(Requests s) async {
-  state = base64UrlEncode(await SecretKeyData.random(length: 7).extractBytes());
+  state = base64UrlEncode(await SecretKeyData.random(length: 7).extractBytes()).replaceAll('=', '');
   verifier =
-      base64UrlEncode(await SecretKeyData.random(length: 96).extractBytes());
+      base64UrlEncode(await SecretKeyData.random(length: 96).extractBytes()).replaceAll('=', '');
   challenge =
-      base64UrlEncode((await Sha256().hash(utf8.encode(verifier))).bytes);
+      base64UrlEncode((await Sha256().hash(utf8.encode(verifier))).bytes).replaceAll('=', '');
 
   return s.get('https://idsrv.unitn.it/sts/identity/connect/authorize',
       headers: iphoneHeaders,
