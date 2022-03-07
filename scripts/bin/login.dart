@@ -17,11 +17,14 @@ String state = '', verifier = '', challenge = '';
 
 /// Initiate Authorization of a Session.
 Future<ApiResponse> initAuthorize(Requests s) async {
-  state = base64UrlEncode(await SecretKeyData.random(length: 7).extractBytes()).replaceAll('=', '');
+  state = base64UrlEncode(await SecretKeyData.random(length: 7).extractBytes())
+      .replaceAll('=', '');
   verifier =
-      base64UrlEncode(await SecretKeyData.random(length: 96).extractBytes()).replaceAll('=', '');
+      base64UrlEncode(await SecretKeyData.random(length: 96).extractBytes())
+          .replaceAll('=', '');
   challenge =
-      base64UrlEncode((await Sha256().hash(utf8.encode(verifier))).bytes).replaceAll('=', '');
+      base64UrlEncode((await Sha256().hash(utf8.encode(verifier))).bytes)
+          .replaceAll('=', '');
 
   return s.get('https://idsrv.unitn.it/sts/identity/connect/authorize',
       headers: iphoneHeaders,
@@ -88,7 +91,6 @@ Future<String> getAuthorizationCode(
     var regex = RegExp(r'code=(.*?)&');
     var g = regex.firstMatch(e.toString());
     code = g!.group(1) ?? '';
-    print(e);
   }
 
   return code;
@@ -113,7 +115,9 @@ Future<String> getUnitnToken(String authZcode) async {
             'code_verifier': verifier
           }).query);
 
-  return '';
+  var obj = jsonDecode(await r.text());
+
+  return obj["id_token"];
 }
 
 main() async {
@@ -129,8 +133,8 @@ main() async {
 
   // Getting the authZcode.
   var authZcode = await getAuthorizationCode(s, samlResponse, relayState);
-  print(authZcode);
 
   // Getting Unitn Token.
   var token = await getUnitnToken(authZcode);
+  print(token);
 }
