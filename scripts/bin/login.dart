@@ -13,14 +13,14 @@ const iphoneHeaders = {
 
 const clientId = 'it.unitn.icts.unitrentoapp';
 const clientSecret = 'FplHsHYTvmMN7hvogSzf';
+String state = '', verifier = '', challenge = '';
 
 /// Initiate Authorization of a Session.
 Future<ApiResponse> initAuthorize(Requests s) async {
-  final state =
-      base64UrlEncode(await SecretKeyData.random(length: 7).extractBytes());
-  final verifier =
+  state = base64UrlEncode(await SecretKeyData.random(length: 7).extractBytes());
+  verifier =
       base64UrlEncode(await SecretKeyData.random(length: 96).extractBytes());
-  final challenge =
+  challenge =
       base64UrlEncode((await Sha256().hash(utf8.encode(verifier))).bytes);
 
   return s.get('https://idsrv.unitn.it/sts/identity/connect/authorize',
@@ -73,8 +73,9 @@ String extractRelayState(String body) {
 /// Retrives authZcode from server by using SAMLResponse.
 Future<String> getAuthorizationCode(
     Requests s, String samlResponse, String relayState) async {
+  String code = '';
   try {
-    var r = await s.post('https://idsrv.unitn.it/sts/identity/saml2service/Acs',
+    await s.post('https://idsrv.unitn.it/sts/identity/saml2service/Acs',
         headers: {
           ...iphoneHeaders,
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -84,8 +85,33 @@ Future<String> getAuthorizationCode(
           'SAMLResponse': samlResponse
         }).query);
   } catch (e) {
+    var regex = RegExp(r'code=(.*?)&');
+    var g = regex.firstMatch(e.toString());
+    code = g!.group(1) ?? '';
     print(e);
   }
+
+  return code;
+}
+
+Future<String> getUnitnToken(String authZcode) async {
+  var r =
+      await Requests().post('https://idsrv.unitn.it/sts/identity/connect/token',
+          headers: {
+            ...iphoneHeaders,
+            'Accept': 'application/json, text/plain, */*',
+            'Unitn-Culture': 'it',
+            'Origin': 'capacitor://localhost',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: Uri(queryParameters: {
+            'grant_type': 'authorization_code',
+            'client_id': clientId,
+            'client_secret': clientSecret,
+            'redirect_uri': 'unitrentoapp://callback',
+            'code': authZcode,
+            'code_verifier': verifier
+          }).query);
 
   return '';
 }
@@ -102,5 +128,9 @@ main() async {
   var relayState = extractRelayState(authNresBody);
 
   // Getting the authZcode.
-  var authZcode = getAuthorizationCode(s, samlResponse, relayState);
+  var authZcode = await getAuthorizationCode(s, samlResponse, relayState);
+  print(authZcode);
+
+  // Getting Unitn Token.
+  var token = await getUnitnToken(authZcode);
 }
